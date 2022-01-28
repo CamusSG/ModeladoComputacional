@@ -167,8 +167,6 @@ classdef directMeths < handle
         end % of splitSystem()
         
         %{
-            Solve the system of equations.
-
             @params Object  $this       Class object.
         %}
         function solve(this)
@@ -373,7 +371,6 @@ classdef directMeths < handle
             end
             xVect = [];
         end % of GaussSeidelMeth()
-        
     end % of protected methods
     
     methods (Static)
@@ -499,6 +496,5 @@ classdef directMeths < handle
                 end
             end
         end % of getData()
-        
     end % of Static methods
 end % of classdef
