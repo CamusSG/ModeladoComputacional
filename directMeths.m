@@ -26,7 +26,7 @@ classdef directMeths < handle
     end % of Constant properties
     
     properties (Access = private)
-        selMethod, isNew, tagMethod, mCoef, xVector, bVector, degree, mSaved, bSaved, tolerance, error, iterMax, iter
+        selMethod, isNew, tagMethod, mCoef, xVector, bVector, degree, mSaved, bSaved, tolerance, error, iterMax, iter, w
     end % of private properties
     
     methods (Access = public)
@@ -66,9 +66,17 @@ classdef directMeths < handle
                 
                 if this.selMethod == 0
                     continue
-                elseif this.selMethod >= 5
-                    this.tolerance = directMeths.getData('Tolerancia');
+                elseif this.selMethod >= 5 && this.selMethod <= 8
+                    
                     this.iterMax = round(directMeths.getData('Cantidad máxima de interaciones'));
+                    
+                    if this.selMethod ~= 8
+                        this.tolerance = directMeths.getData('Tolerancia');
+                    end
+                    
+                    if this.selMethod == 7
+                        this.w = directMeths.getData('Indique el factor de relajación');
+                    end
                 end
                 
                 this.solve();
@@ -185,6 +193,8 @@ classdef directMeths < handle
                     this.xVector = this.GaussSeidelMeth();
                 case 7 % Succesive Over-Relaxtion
                     this.xVector = this.SORMeth();
+                case 8 % Conjugate Gradients
+                    this.xVector = this.conjGradsMeth();
             end
         end % of solve()
         
@@ -217,9 +227,7 @@ classdef directMeths < handle
             @return matrix  $mInv       Inverse matrix.
         %}
         function mInv = AdjunctMatrixMeth(this)
-            
-            M = this.mCoef;
-            determinant = det(M);
+            determinant = det(this.mCoef);
             
             if determinant == 0
                 input(sprintf('\n\t\t%s',...
@@ -228,7 +236,7 @@ classdef directMeths < handle
                 return
             end
             
-            adjunct = adjoint(M);
+            adjunct = adjoint(this.mCoef);
             mInv = adjunct/determinant;
             
         end % of AdjunctMatrixMeth()
@@ -267,11 +275,10 @@ classdef directMeths < handle
         %}
         function xVect = ThomasMeth(this)
             A = this.mCoef;
-            n = this.degree;
-            L = eye(n);
-            U = zeros(n,n);
+            L = eye(this.degree);
+            U = zeros(this.degree,this.degree);
             
-            for i = 2:n
+            for i = 2:this.degree
                 A(i,i-1) = A(i,i-1)/A(i-1,i-1);
                 A(i,i) = A(i,i) - A(i,i-1)*A(i-1,i);
                 L(i,i-1) = A(i,i-1);
@@ -289,21 +296,18 @@ classdef directMeths < handle
             @return matrix  $xVect      Vector of results.
         %}
         function xVect = JacobiMeth(this)
-            tolerance_ = this.tolerance;
-            iter_max = this.iterMax;
             A = this.mCoef;
-            b = this.bVector;
             n = this.degree;
             xVect = ones(n,1);
             
-            for k = 1:iter_max
+            for k = 1:this.iterMax
                 yVect = xVect;
                 for i = 1:n
                     s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:n) * yVect(i+1:n);
-                    xVect(i) = (b(i)-s)/A(i,i);
+                    xVect(i) = (this.bVector(i)-s)/A(i,i);
                 end
                 
-                if norm(yVect-xVect,inf) < tolerance_
+                if norm(yVect-xVect,inf) < this.tolerance
                     this.error = norm(yVect-xVect,inf);
                     this.iter = k;
                     return
@@ -319,27 +323,20 @@ classdef directMeths < handle
             @return matrix  $xVect      Vector of results.
         %}
         function xVect = GaussSeidelMeth(this)
-            tolerance_ = this.tolerance;
-            iter_max = this.iterMax;
             A = this.mCoef;
-            b = this.bVector;
-            n = this.degree;
-            xVect = ones(n,1);
+            xVect = ones(this.degree,1);
+            k = 1;
+            error_ = 100;
             
-            for k = 1:iter_max
+            while k < this.iterMax && this.tolerance < error_
+                k = k + 1;
                 yVect = xVect;
-                for i = 1:n
-                    s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:n) * yVect(i+1:n);
-                    xVect(i) = (b(i)-s)/A(i,i);
+                for i = 1:this.degree
+                    s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:this.degree) * yVect(i+1:this.degree);
+                    xVect(i) = (this.bVector(i)-s)/A(i,i);
                 end
-                
-                if norm(yVect-xVect,inf) < tolerance_
-                    this.error = norm(yVect-xVect,inf);
-                    this.iter = k;
-                    return
-                end
+                error_ = norm(yVect-xVect,inf);
             end
-            xVect = [];
         end % of GaussSeidelMeth()
         
         %{
@@ -349,28 +346,59 @@ classdef directMeths < handle
             @return matrix  $xVect      Vector of results.
         %}
         function xVect = SORMeth(this)
-            tolerance_ = this.tolerance;
-            iter_max = this.iterMax;
-            A = this.mCoef;
-            b = this.bVector;
-            n = this.degree;
-            xVect = ones(n,1);
+            xVect = zeros(this.degree,1);
+            this.error = 100;
+            this.iter = 0;
             
-            for k = 1:iter_max
-                yVect = xVect;
-                for i = 1:n
-                    s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:n) * yVect(i+1:n);
-                    xVect(i) = (b(i)-s)/A(i,i);
+            while this.error > this.tolerance
+                if this.iter > this.iterMax
+                    xVect = [];
+                    return
+                else                
+                    this.iter = this.iter + 1;
                 end
                 
-                if norm(yVect-xVect,inf) < tolerance_
-                    this.error = norm(yVect-xVect,inf);
-                    this.iter = k;
-                    return
+                for i = 1:this.degree
+                    j = [i:i-1, i+1:this.degree];
+                    su = this.bVector(i) - this.mCoef(i,j) * xVect(j);
+                    xi = (1-this.w)*xVect(i) + this.w*su/this.mCoef(i,i);
+                    this.error = max(abs(this.xVector(i)-xi),this.error);
+                    xVect(i) = xi;
                 end
+                this.error = this.error/max(abs(xVect));
             end
-            xVect = [];
-        end % of GaussSeidelMeth()
+        end % of SORMeth()
+        
+        %{
+            Implements the Conjugate Gradients method to solve the system of equations.
+
+            @params Object  $this       Class object.
+            @return matrix  $xVect      Vector of results.
+        %}
+        function xVect = conjGradsMeth(this)
+            this.iter = 0;
+            xVect = zeros(this.degree,1);
+            r = this.bVector - this.mCoef*xVect;
+            d = r'*r;
+            p = r;
+            this.tolerance = sqrt(eps)*d;
+            
+            while d > this.tolerance
+                if this.iter > this.iterMax
+                    xVect = [];
+                else
+                    this.iter = this.iter + 1;
+                end
+                v = this.mCoef*p;
+                alpha = d/(p'*v);
+                xVect = xVect + alpha*p;
+                r = r - alpha*v;
+                beta = d;
+                d = r'*r;
+                beta = d/beta;
+                p = r + beta*p;
+            end
+        end % of conjGradsMeth()
     end % of protected methods
     
     methods (Static)
