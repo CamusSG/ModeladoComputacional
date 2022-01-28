@@ -15,14 +15,10 @@
 classdef directMeths < handle
     
     properties (Constant, Access = private)
-        procedures = ["Método de Gauss-Jordan";
-                      "Método de matriz adjunta";
-                      "Método de eliminación Gaussiana";
-                      "Método de Thomas Llewellyn";
-                      "Método de Jacobi";
-                      "Método de Gauss-Seidel";
-                      "Método de Sobre-Relajación Sucesiva";
-                      "Método del Gradiente Conjugado";
+        procedures = ["Método de Gauss-Jordan";                 "Método de matriz adjunta";
+                      "Método de eliminación Gaussiana";        "Método de Thomas Llewellyn";
+                      "Método de Jacobi";                       "Método de Gauss-Seidel";
+                      "Método de Sobre-Relajación Sucesiva";    "Método del Gradiente Conjugado";
                       "Regresar al menú anterior"];
         actions = ["Usar el mismo sistema de ecuaciones";
                    "Recapturar el sistema de ecuaciones";
@@ -30,9 +26,7 @@ classdef directMeths < handle
     end % of Constant properties
     
     properties (Access = private)
-        selMethod, isNew, tagMethod
-        mCoef, xVector, bVector, degree, mSaved, bSaved
-        tolerance, error, iterMax, iter
+        selMethod, isNew, tagMethod, mCoef, xVector, bVector, degree, mSaved, bSaved, tolerance, error, iterMax, iter
     end % of private properties
     
     methods (Access = public)
@@ -68,37 +62,32 @@ classdef directMeths < handle
                     end
                 end
                                 
-                this.selMethod = directMeths.printMenu('MÉTODOS DE RESOLUCIÓN',...
-                    this.procedures);
+                this.selMethod = directMeths.printMenu('MÉTODOS DE RESOLUCIÓN',this.procedures);
                 
                 if this.selMethod == 0
                     continue
                 elseif this.selMethod >= 5
                     this.tolerance = directMeths.getData('Tolerancia');
-                    this.iterMax = round(directMeths.getData(...
-                        'Cantidad máxima de interaciones'));
+                    this.iterMax = round(directMeths.getData('Cantidad máxima de interaciones'));
                 end
                 
                 this.solve();
                 this.tagMethod = upper(string(this.procedures(this.selMethod)));
                 
                 if isempty(this.xVector)
-                    input(sprintf('\n\n%85s.',...
-                        '¡ERROR! No se pudo resolver el sistema de ecuaciones'));
+                    input(sprintf('\n\n%85s.','¡ERROR! No se pudo resolver el sistema de ecuaciones'));
                     continue
                 end
                 
                 if this.selMethod < 5
                     directMeths.cTitle(sprintf('RESUELTO POR EL %s',this.tagMethod));
                 else
-                    directMeths.cTitle(sprintf('RESUELTO POR EL %s (ITER. No. %i)',...
-                        this.tagMethod,this.iter));
+                    directMeths.cTitle(sprintf('RESUELTO POR EL %s (ITER. No. %i)',this.tagMethod,this.iter));
                 end
                 
                 directMeths.printSolution(this.degree,this.xVector);
                     
-                again = input(sprintf('\n\n%85s: ',...
-                    '¿Desea resolver otro sistema? (Y/N)'),'s');
+                again = input(sprintf('\n\n%85s: ','¿Desea resolver otro sistema? (Y/N)'),'s');
                 
                 if strcmp(again,'Y') || strcmp(again,'y')
                     continue
@@ -116,11 +105,8 @@ classdef directMeths < handle
         function setEquations(this)
             while true
                 directMeths.cTitle('CAPTURANDO EL SISTEMA DE ECUACIONES');
-                fprintf('\n\n\t%s\n\n\t\t\t%s\n\n\t%s\n\n\t\t\t%s\n\n', ...
-                    'Escriba las ecuaciones de la siguiente manera', ...
-                    'a11,a12,a13,b1;a21,a22,a23,b2;a31,a32,a33,b3', ...
-                    'Por ejemplo', ...
-                    '2,3,1,6;3,-2,-4,9;5,-1,-1,4');
+                fprintf('\n\n\t%s\n\n\t\t\t%s\n\n\t%s\n\n\t\t\t%s\n\n', 'Escriba las ecuaciones de la siguiente manera', ...
+                    'a11,a12,a13,b1;a21,a22,a23,b2;a31,a32,a33,b3','Por ejemplo','2,3,1,6;3,-2,-4,9;5,-1,-1,4');
                 
                 try
                     str = input(sprintf('\tCapture el sistema: '),'s');
@@ -128,16 +114,14 @@ classdef directMeths < handle
                 end
                 
                 if ~this.splitSystem(str)
-                    input(sprintf('\n\t\t%s',...
-                        '¡Error al capturar la información! Reintente.'));
+                    input(sprintf('\n\t\t%s','¡Error al capturar la información! Reintente.'));
                     continue
                 end
                 
                 directMeths.cTitle('SISTEMA DE ECUACIONES CAPTURADA'); 
                 directMeths.printSystem(this.mCoef,this.bVector,this.degree);
                 
-                isCorrect = input(sprintf('\n\n%85s: ',...
-                    '¿La información es correcta? (Y/N)'),'s');
+                isCorrect = input(sprintf('\n\n%85s: ','¿La información es correcta? (Y/N)'),'s');
                 
                 if strcmp(isCorrect,'Y') || strcmp(isCorrect,'y')
                     this.isNew = false;
@@ -200,7 +184,9 @@ classdef directMeths < handle
                 case 5 % Jacobi
                     this.xVector = this.JacobiMeth();
                 case 6 % Gauss-Seidel
-                    this.xVector = this.GaussSeidel();
+                    this.xVector = this.GaussSeidelMeth();
+                case 7 % Succesive Over-Relaxtion
+                    this.xVector = this.SORMeth();
             end
         end % of solve()
         
@@ -358,6 +344,36 @@ classdef directMeths < handle
             xVect = [];
         end % of GaussSeidelMeth()
         
+        %{
+            Implements the Sucessive Over-Relaxtion method to solve the system of equations.
+
+            @params Object  $this       Class object.
+            @return matrix  $xVect      Vector of results.
+        %}
+        function xVect = SORMeth(this)
+            tolerance_ = this.tolerance;
+            iter_max = this.iterMax;
+            A = this.mCoef;
+            b = this.bVector;
+            n = this.degree;
+            xVect = ones(n,1);
+            
+            for k = 1:iter_max
+                yVect = xVect;
+                for i = 1:n
+                    s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:n) * yVect(i+1:n);
+                    xVect(i) = (b(i)-s)/A(i,i);
+                end
+                
+                if norm(yVect-xVect,inf) < tolerance_
+                    this.error = norm(yVect-xVect,inf);
+                    this.iter = k;
+                    return
+                end
+            end
+            xVect = [];
+        end % of GaussSeidelMeth()
+        
     end % of protected methods
     
     methods (Static)
@@ -407,9 +423,7 @@ classdef directMeths < handle
         %}
         function cTitle(title)
             clc;
-            str = sprintf('%86s',title);
-            str = strjust(str,'center');
-            
+            str = strjust(sprintf('%86s',title),'center');
             directMeths.printBar(90)
             fprintf('\n\t||%s||',str)
             directMeths.printBar(90)
@@ -478,8 +492,7 @@ classdef directMeths < handle
                     if data > 0
                         return
                     else
-                        input(sprintf('\n\t\t%s',...
-                            '¡Error al capturar la información! Reintente.'));
+                        input(sprintf('\n\t\t%s','¡Error al capturar la información! Reintente.'));
                         continue
                     end
                 catch
