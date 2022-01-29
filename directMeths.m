@@ -92,7 +92,7 @@ classdef directMeths < handle
                 if this.selMethod < 5
                     directMeths.cTitle(sprintf('RESUELTO POR EL %s',this.tagMethod));
                 else
-                    directMeths.cTitle(sprintf('RESUELTO POR EL %s (ITER. No. %i, ERROR %5.4f)',this.tagMethod,this.iter,this.error));
+                    directMeths.cTitle(sprintf('RESUELTO POR EL %s (ITER. No. %03i, ERROR %6.5f)',this.tagMethod,this.iter,this.error));
                 end
                 
                 directMeths.printSolution(this.degree,this.xVector);
