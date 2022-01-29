@@ -4,7 +4,7 @@
                                Master in Aerospace Engineering
 
             Filename:   directMeths.m
-                Date:   Jan 18th, 2022 (Update on Jan 20th, 2022)
+                Date:   Jan 18th, 2022 (Update on Jan 28th, 2022)
               Author:   Oscar Federico García Castro
              Contact:   213220003@upmh.edu.mx
 
