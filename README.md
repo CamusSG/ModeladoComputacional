@@ -1,7 +1,7 @@
 # SolveLinealSystems
 ### Bienvenido
 
-- Herramienta creada para la resolución de sistemas lineales a través de métodos numéricos directos e iterativos, estos son:
+- Herramienta creada para la resolución de sistemas lineales a través de métodos numéricos directos e iterativos.
 - Implementando en MatLAB R2020a.
 
 # ¿Qué metodos aplica?
