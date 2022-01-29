@@ -82,15 +82,17 @@ classdef directMeths < handle
                 this.solve();
                 this.tagMethod = upper(string(this.procedures(this.selMethod)));
                 
-                if isempty(this.xVector)
-                    input(sprintf('\n\n%85s.','¡ERROR! No se pudo resolver el sistema de ecuaciones'));
-                    continue
+                if this.selMethod >= 5
+                    if this.error > this.tolerance || this.iter == this.iterMax
+                        input(sprintf('\n\n%85s.','¡ERROR! No se pudo resolver el sistema de ecuaciones'));
+                        continue
+                    end
                 end
                 
                 if this.selMethod < 5
                     directMeths.cTitle(sprintf('RESUELTO POR EL %s',this.tagMethod));
                 else
-                    directMeths.cTitle(sprintf('RESUELTO POR EL %s (ITER. No. %i)',this.tagMethod,this.iter));
+                    directMeths.cTitle(sprintf('RESUELTO POR EL %s (ITER. No. %i, ERROR %5.4f)',this.tagMethod,this.iter,this.error));
                 end
                 
                 directMeths.printSolution(this.degree,this.xVector);
@@ -297,23 +299,20 @@ classdef directMeths < handle
         %}
         function xVect = JacobiMeth(this)
             A = this.mCoef;
-            n = this.degree;
-            xVect = ones(n,1);
+            xVect = ones(this.degree,1);
+            this.iter = 0;
+            this.error = 100;
             
-            for k = 1:this.iterMax
+            while this.error > this.tolerance && this.iter <= this.iterMax
+                this.iter = this.iter + 1;
                 yVect = xVect;
-                for i = 1:n
-                    s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:n) * yVect(i+1:n);
+                for i = 1:this.degree
+                    s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:this.degree) * yVect(i+1:this.degree);
                     xVect(i) = (this.bVector(i)-s)/A(i,i);
                 end
                 
-                if norm(yVect-xVect,inf) < this.tolerance
-                    this.error = norm(yVect-xVect,inf);
-                    this.iter = k;
-                    return
-                end
+                this.error = norm(yVect-xVect,inf);
             end
-            xVect = [];
         end % of JacobiMeth()
         
         %{
@@ -325,17 +324,17 @@ classdef directMeths < handle
         function xVect = GaussSeidelMeth(this)
             A = this.mCoef;
             xVect = ones(this.degree,1);
-            k = 1;
-            error_ = 100;
+            this.iter = 0;
+            this.error = 100;
             
-            while k < this.iterMax && this.tolerance < error_
-                k = k + 1;
+            while this.error > this.tolerance && this.iter <= this.iterMax
+                this.iter = this.iter + 1;
                 yVect = xVect;
                 for i = 1:this.degree
                     s = A(i,1:i-1) * yVect(1:i-1) + A(i,i+1:this.degree) * yVect(i+1:this.degree);
                     xVect(i) = (this.bVector(i)-s)/A(i,i);
                 end
-                error_ = norm(yVect-xVect,inf);
+                this.error = norm(yVect-xVect,inf);
             end
         end % of GaussSeidelMeth()
         
@@ -350,14 +349,8 @@ classdef directMeths < handle
             this.error = 100;
             this.iter = 0;
             
-            while this.error > this.tolerance
-                if this.iter > this.iterMax
-                    xVect = [];
-                    return
-                else                
-                    this.iter = this.iter + 1;
-                end
-                
+            while this.error > this.tolerance && this.iter <= this.iterMax
+                this.iter = this.iter + 1;
                 for i = 1:this.degree
                     j = [i:i-1, i+1:this.degree];
                     su = this.bVector(i) - this.mCoef(i,j) * xVect(j);
@@ -379,23 +372,19 @@ classdef directMeths < handle
             this.iter = 0;
             xVect = zeros(this.degree,1);
             r = this.bVector - this.mCoef*xVect;
-            d = r'*r;
+            this.error = r'*r;
+            this.tolerance = sqrt(eps)*this.error;
             p = r;
-            this.tolerance = sqrt(eps)*d;
             
-            while d > this.tolerance
-                if this.iter > this.iterMax
-                    xVect = [];
-                else
-                    this.iter = this.iter + 1;
-                end
+            while this.error > this.tolerance && this.iter <= this.iterMax
+                this.iter = this.iter + 1;
                 v = this.mCoef*p;
-                alpha = d/(p'*v);
+                alpha = this.error/(p'*v);
                 xVect = xVect + alpha*p;
                 r = r - alpha*v;
-                beta = d;
-                d = r'*r;
-                beta = d/beta;
+                beta = this.error;
+                this.error = r'*r;
+                beta = this.error/beta;
                 p = r + beta*p;
             end
         end % of conjGradsMeth()
