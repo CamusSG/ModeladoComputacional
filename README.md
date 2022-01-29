@@ -15,7 +15,7 @@
 
 # ¿Cómo se ejecuta?
 
-Solo debes descargar el archivo *solveLinealSystems.m* y desde el editor de MatLAB llamar la función:
+Solo debes descargar el archivo *solveLinealSystems.m* y desde la ventanda de comandos en MatLAB llamar la función:
 
 ```c++
 solveLinealSystems()
