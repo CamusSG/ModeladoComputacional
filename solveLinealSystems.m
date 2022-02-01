@@ -33,7 +33,7 @@ classdef solveLinealSystems < handle
         %{
             Constructor. Instantiate an object of the class.
         %}
-        function this = directMeths()
+        function this = solveLinealSystems()
             this.isNew = true;
             this.init();
         end % of directMeths()
