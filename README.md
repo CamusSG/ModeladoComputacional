@@ -1,7 +1,8 @@
-# SolveLinealSystems
+# Calculadora Modelado Computacional
+# UPMH - MIA G2021
 ### Bienvenido
 
-- Herramienta creada para la resolución de sistemas lineales a través de métodos numéricos directos e iterativos.
+- Herramienta GUI creada para la resolución de sistemas lineales, ecuaciones no lineales y ecuaciones diferenciales a través de métodos numéricos directos e iterativos.
 - Implementando en MatLAB R2020a.
 
 # ¿Qué metodos aplica?
@@ -18,5 +19,5 @@
 Solo debes descargar el archivo *solveLinealSystems.m* y desde la ventanda de comandos en MatLAB llamar la función:
 
 ```c++
-solveLinealSystems()
+Calculadora()
 ```
